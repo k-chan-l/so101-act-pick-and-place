@@ -106,4 +106,26 @@ wandb login
 hf auth login --add-to-git-credential --token <HF_TOKEN>
 ```
 
-GPU: NVIDIA RTX 3070 (CUDA 12.8 / cuDNN 9.6).
+로봇 제어 PC GPU: NVIDIA RTX 3070 Laptop, 8GB (CUDA 12.8 / cuDNN 9.6).
+
+---
+
+## 4. 학습 환경 분리 (3차부터)
+
+2차까지는 로봇 제어 PC(RTX 3070 Laptop, 8GB)에서 수집과 학습을 모두 처리했지만, 3차부터 **학습만 SSH 원격의 RTX 5070 Ti 머신으로 분리**했습니다.
+
+| 역할 | 머신 |
+| --- | --- |
+| 데이터 수집 (`lerobot-record`), 롤아웃 (`lerobot-rollout`) | 로봇 제어 PC — 팔·카메라가 USB로 물려 있어야 하므로 이동 불가 |
+| 학습 (`lerobot-train`) | SSH 원격 머신 (RTX 5070 Ti) |
+
+```bash
+ssh <user>@<training-host>     # LAN 내 학습 머신
+```
+
+### 이 구성에서 주의할 점
+
+- **데이터셋은 HF를 경유합니다.** 수집 측에서 `--dataset.push_to_hub=true`로 올리고, 학습 측에서 `--dataset.repo_id`로 받습니다. 두 머신이 파일시스템을 공유하지 않으므로 push를 빠뜨리면 학습 측이 예전 리비전을 씁니다.
+- **체크포인트도 마찬가지입니다.** `--policy.push_to_hub=true`로 올려야 롤아웃하는 제어 PC에서 `--policy.path=k-chan-l/...` 로 바로 당겨쓸 수 있습니다. 원격에만 남은 `outputs/` 는 제어 PC에서 보이지 않습니다.
+- **긴 학습은 세션이 끊기면 같이 죽습니다.** `tmux` 또는 `nohup`으로 띄워두면 SSH 연결이 끊겨도 계속 돕니다.
+- 원격 머신에도 동일한 conda 환경과 LeRobot 설치가 필요합니다 (아래 3절과 동일, 단 `lerobot[feetech]`는 모터를 직접 물리지 않으므로 불필요).

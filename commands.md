@@ -51,6 +51,8 @@ lerobot-record \
 
 ## train — 학습
 
+> **3차부터 학습은 SSH 원격 머신(RTX 5070 Ti)에서 실행합니다.** 아래 명령은 원격에서 돌리고, 데이터셋과 체크포인트는 HF를 경유해 주고받습니다 (→ [setup.md](setup.md) 4절). 1·2차는 로봇 제어 PC 로컬(RTX 3070 Laptop)에서 학습했습니다.
+
 셸 히스토리에는 재개(resume) 명령만 남아 있지만, HF의 `train_config.json`에서 실제 학습 설정을 복원했습니다. 공통 정책 설정은 두 라운드가 같고 **batch_size / save_freq만 다릅니다**.
 
 | 항목 | 1차 (`pick_and_place2`) | 2차 (`pick_and_place`) |

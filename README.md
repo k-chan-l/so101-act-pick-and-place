@@ -12,7 +12,8 @@ SO-101 로봇팔로 "파란 큐브를 집어 종이컵에 넣는" 태스크를 A
 | 로봇팔 | SO-101 follower + leader (leader teleoperation 방식 시연) |
 | 액추에이터 | Feetech STS3215 (ID 1~6) |
 | 카메라 | `cam_top` (전체뷰), `cam_wrist` (손목캠) — 각 640×480 / 30fps / MJPEG |
-| 워크스테이션 GPU | NVIDIA RTX 3070 |
+| 로봇 제어 PC | 노트북, NVIDIA RTX 3070 Laptop (8GB) — 데이터 수집·롤아웃 전담 |
+| 학습 GPU | 1·2차: 위 RTX 3070 Laptop (로컬) / **3차부터: SSH 원격 접속한 RTX 5070 Ti** |
 
 ### 소프트웨어
 | 항목 | 내용 |
