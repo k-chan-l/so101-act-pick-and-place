@@ -32,6 +32,7 @@
 ### 학습
 - 정책: [`k-chan-l/pick_and_place2_act`](https://huggingface.co/k-chan-l/pick_and_place2_act)
 - ACT / ResNet-18 / chunk_size 100 / **batch_size 8** / lr 1e-5 / 100,000 steps / save_freq 10,000
+- `image_transforms.enable=false` (이미지 증강 없음)
 - 학습 환경: 로봇 제어 PC 로컬 (RTX 3070 Laptop, 8GB)
 
 ### 결과
@@ -69,7 +70,8 @@
 ### 학습
 - 정책: [`k-chan-l/pick_and_place_act`](https://huggingface.co/k-chan-l/pick_and_place_act)
 - ACT / ResNet-18 / chunk_size 100 / **batch_size 16** (1차 8에서 증가) / lr 1e-5 / 100,000 steps / save_freq 5,000
-- 학습 환경: 로봇 제어 PC 로컬 (RTX 3070 Laptop, 8GB)
+- `image_transforms.enable=false` (이미지 증강 없음)
+- 학습 환경: **로봇 제어 PC가 아닌 별도 랩탑** (RTX 4070 추정 — 확인 필요). 1차보다 VRAM 여유가 생겨 batch_size를 8→16으로 올릴 수 있었던 것으로 보입니다.
 - 출력 경로가 `outputs/train/act_so101/pick_and_place_b16` 로, 배치 크기를 바꿔가며 비교한 흔적이 남아 있습니다.
 
 ### 결과
@@ -114,9 +116,13 @@
 - 에피소드 길이 30초, 리셋 5초.
 
 ### 학습
-- **학습 중.** 완료 후 정책 repo 링크와 하이퍼파라미터를 여기에 기록할 것.
-- **학습 환경이 3차부터 바뀌었습니다** — 로컬 RTX 3070 Laptop 대신 **SSH로 원격 접속한 RTX 5070 Ti**에서 학습합니다. 로봇 제어 PC는 데이터 수집과 롤아웃만 담당합니다 (→ [setup.md](../setup.md)).
-- VRAM 여유가 늘었으므로 batch_size를 2차의 16보다 키우는 선택지가 생겼습니다. **다만 batch_size를 바꾸면 3차의 촬영 프로토콜 개선 효과와 배치 크기 효과가 섞여 원인 분리가 안 됩니다** — 이번 라운드는 2차와 동일한 batch_size 16로 두고, 배치 크기는 별도 라운드에서 비교하는 편이 낫습니다.
+- **학습 중.** 실행한 명령은 [commands.md](../commands.md) 참고.
+- ACT / ResNet-18 / chunk_size 100 / **batch_size 16** (2차와 동일) / 100,000 steps / save_freq 10,000 / num_workers 8
+- **`image_transforms.enable=true` — 이미지 증강을 처음 켰습니다** (1·2차는 모두 `false`). ColorJitter(밝기·대비·채도·색조), SharpnessJitter, RandomAffine(±5°, ±5% 이동)이 적용됩니다.
+- 학습 환경: **SSH로 원격 접속한 RTX 5070 Ti**. 로봇 제어 PC는 데이터 수집과 롤아웃만 담당합니다 (→ [setup.md](../setup.md) 4절).
+- `--policy.push_to_hub=false` — 체크포인트가 원격 머신의 `outputs/train/act_so101/pick_and_place3/` 에만 남습니다. 롤아웃하려면 제어 PC로 따로 가져와야 합니다.
+
+> **해석 시 주의 — 이번 라운드는 변수가 두 개입니다.** batch_size를 2차와 같은 16으로 둔 덕분에 배치 크기는 통제됐지만, **촬영 프로토콜 개선**과 **이미지 증강 활성화**가 동시에 들어갔습니다. 3차 성공률이 올라가도 둘 중 어느 쪽 기여인지 이 라운드만으로는 분리되지 않습니다. 분리가 필요하면 같은 3차 데이터셋에 `image_transforms.enable=false`로 한 번 더 학습해 비교하는 것이 가장 싼 방법입니다 (데이터 재촬영 불필요).
 
 ### 결과
 - **미기록.** 학습 완료 후 [protocol.md](protocol.md) 기준(4~5지점 × 4회 = 20회)으로 평가하고 아래 표를 채웁니다.

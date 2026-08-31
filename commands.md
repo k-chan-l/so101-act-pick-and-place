@@ -51,20 +51,45 @@ lerobot-record \
 
 ## train — 학습
 
-> **3차부터 학습은 SSH 원격 머신(RTX 5070 Ti)에서 실행합니다.** 아래 명령은 원격에서 돌리고, 데이터셋과 체크포인트는 HF를 경유해 주고받습니다 (→ [setup.md](setup.md) 4절). 1·2차는 로봇 제어 PC 로컬(RTX 3070 Laptop)에서 학습했습니다.
+> **학습은 라운드마다 다른 머신에서 돌렸습니다.** 1차는 로봇 제어 PC(RTX 3070 Laptop), 2차는 별도 랩탑(RTX 4070 추정), **3차부터는 SSH 원격 머신(RTX 5070 Ti)** 입니다. 데이터셋은 HF를 경유해 주고받습니다 (→ [setup.md](setup.md) 4절).
 
-셸 히스토리에는 재개(resume) 명령만 남아 있지만, HF의 `train_config.json`에서 실제 학습 설정을 복원했습니다. 공통 정책 설정은 두 라운드가 같고 **batch_size / save_freq만 다릅니다**.
+3차 명령은 실행 기록 그대로이고, 1·2차는 셸 히스토리에 재개(resume) 명령만 남아 있어 HF의 `train_config.json`에서 설정을 복원했습니다. 정책 아키텍처 설정은 세 라운드가 모두 같고, 아래 항목만 다릅니다.
 
-| 항목 | 1차 (`pick_and_place2`) | 2차 (`pick_and_place`) |
-| --- | --- | --- |
-| batch_size | 8 | 16 |
-| num_workers | 4 | 8 |
-| save_freq | 10,000 | 5,000 |
-| steps | 100,000 | 100,000 |
-| output_dir | `outputs/train/act_so101/pick_and_place2` | `outputs/train/act_so101/pick_and_place_b16` |
-| wandb | 사용 | 미사용 |
+| 항목 | 1차 (`pick_and_place2`) | 2차 (`pick_and_place`) | 3차 (`pick_and_place3`) |
+| --- | --- | --- | --- |
+| batch_size | 8 | 16 | 16 |
+| num_workers | 4 | 8 | 8 |
+| save_freq | 10,000 | 5,000 | 10,000 |
+| steps | 100,000 | 100,000 | 100,000 |
+| image_transforms | false | false | **true** |
+| push_to_hub | true | true | **false** |
+| output_dir | `.../pick_and_place2` | `.../pick_and_place_b16` | `.../pick_and_place3` |
+| wandb | 사용 | 미사용 | 미사용 |
+| 학습 머신 | 로봇 제어 PC (RTX 3070 Laptop) | 별도 랩탑 (RTX 4070 추정) | SSH 원격 (RTX 5070 Ti) |
 
 공통: ACT / `vision_backbone=resnet18` / `dim_model=512` / `chunk_size=100` / `n_action_steps=100` / `n_encoder_layers=4` / `n_decoder_layers=1` / `use_vae=true` / lr 1e-5 (백본 포함) / weight_decay 1e-4 / seed 1000 / `device=cuda`
+
+3차 학습 명령 (실제 실행):
+
+```bash
+lerobot-train \
+  --dataset.repo_id=k-chan-l/pick_and_place3 \
+  --dataset.image_transforms.enable=true \
+  --policy.type=act \
+  --policy.device=cuda \
+  --policy.repo_id=k-chan-l/pick_and_place3_act \
+  --policy.push_to_hub=false \
+  --job_name=pick_and_place3 \
+  --output_dir=outputs/train/act_so101/pick_and_place3 \
+  --steps=100_000 \
+  --save_checkpoint=true \
+  --save_freq=10_000 \
+  --batch_size=16 \
+  --num_workers=8 \
+  2>&1 | tee train.log
+```
+
+`--policy.push_to_hub=false`이므로 학습이 끝나도 HF에 정책이 올라가지 않습니다. 롤아웃하려면 원격의 `outputs/train/act_so101/pick_and_place3/checkpoints/last/pretrained_model/` 를 제어 PC로 가져오거나, 나중에 수동으로 HF에 push해야 합니다 (→ [setup.md](setup.md) 4절).
 
 2차 학습 명령:
 

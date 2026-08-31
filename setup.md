@@ -112,7 +112,15 @@ hf auth login --add-to-git-credential --token <HF_TOKEN>
 
 ## 4. 학습 환경 분리 (3차부터)
 
-2차까지는 로봇 제어 PC(RTX 3070 Laptop, 8GB)에서 수집과 학습을 모두 처리했지만, 3차부터 **학습만 SSH 원격의 RTX 5070 Ti 머신으로 분리**했습니다.
+학습 머신은 라운드마다 달랐고, 3차에서 **SSH 원격 머신으로 고정**됐습니다.
+
+| 라운드 | 학습 머신 |
+| --- | --- |
+| 1차 | 로봇 제어 PC (RTX 3070 Laptop, 8GB) — 수집·학습 동시 |
+| 2차 | 별도 랩탑 (RTX 4070 추정 — 확인 필요) |
+| 3차~ | **SSH 원격 머신 (RTX 5070 Ti)** |
+
+3차 기준 역할 분담:
 
 | 역할 | 머신 |
 | --- | --- |
@@ -126,6 +134,16 @@ ssh <user>@<training-host>     # LAN 내 학습 머신
 ### 이 구성에서 주의할 점
 
 - **데이터셋은 HF를 경유합니다.** 수집 측에서 `--dataset.push_to_hub=true`로 올리고, 학습 측에서 `--dataset.repo_id`로 받습니다. 두 머신이 파일시스템을 공유하지 않으므로 push를 빠뜨리면 학습 측이 예전 리비전을 씁니다.
-- **체크포인트도 마찬가지입니다.** `--policy.push_to_hub=true`로 올려야 롤아웃하는 제어 PC에서 `--policy.path=k-chan-l/...` 로 바로 당겨쓸 수 있습니다. 원격에만 남은 `outputs/` 는 제어 PC에서 보이지 않습니다.
+- **체크포인트는 현재 HF를 경유하지 않습니다.** 3차 학습은 `--policy.push_to_hub=false`로 돌렸기 때문에 결과물이 원격 머신의 `outputs/train/act_so101/pick_and_place3/` 에만 남습니다. 롤아웃은 제어 PC에서 해야 하므로 둘 중 하나가 필요합니다:
+
+  ```bash
+  # (a) 체크포인트를 제어 PC로 복사
+  scp -r <user>@<training-host>:~/lerobot/outputs/train/act_so101/pick_and_place3/checkpoints/last/pretrained_model \
+      ~/lerobot/outputs/train/act_so101/pick_and_place3_pretrained
+
+  # (b) 또는 원격에서 HF에 수동 push 후, 제어 PC에서 --policy.path=k-chan-l/pick_and_place3_act 로 사용
+  ```
+
+  다음 라운드부터 `--policy.push_to_hub=true`로 두면 이 단계가 없어집니다.
 - **긴 학습은 세션이 끊기면 같이 죽습니다.** `tmux` 또는 `nohup`으로 띄워두면 SSH 연결이 끊겨도 계속 돕니다.
 - 원격 머신에도 동일한 conda 환경과 LeRobot 설치가 필요합니다 (아래 3절과 동일, 단 `lerobot[feetech]`는 모터를 직접 물리지 않으므로 불필요).
