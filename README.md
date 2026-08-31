@@ -50,5 +50,5 @@ SO-101 로봇팔로 "파란 큐브를 집어 종이컵에 넣는" 태스크를 A
 - [docs/experiments.md](docs/experiments.md) — 라운드별 상세 실험 기록 (데이터 구성 / 촬영 방식 / 결과 / 실패 원인 가설 / 다음 라운드 조치)
 - [docs/protocol.md](docs/protocol.md) — 평가 프로토콜과 실패 유형 정의
 - [commands.md](commands.md) — 실제로 사용한 LeRobot 명령어 (record / train / resume / rollout)
-- [setup.md](setup.md) — udev 규칙, 카메라 대역폭 문제, 모터 이슈 해결 기록
+- [setup.md](setup.md) — udev 규칙, 카메라 MJPEG·USB 대역폭 문제 해결 기록, 소프트웨어 설치
 - [media/](media/) — 롤아웃 영상
