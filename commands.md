@@ -1,6 +1,8 @@
 # 사용한 명령어
 
-셸 히스토리에서 추출한, 실제로 실행한 LeRobot 명령어입니다.
+셸 히스토리와 HF에 올라간 `train_config.json`에서 복원한, 실제로 실행한 LeRobot 명령어입니다.
+
+> **라운드-이름 대응** — `pick_and_place2` = 1차, `pick_and_place` = 2차, `pick_and_place3` = 3차. 자세한 내용은 [docs/experiments.md](docs/experiments.md).
 
 ## 공통 환경변수
 
@@ -12,7 +14,7 @@ hf auth login --add-to-git-credential --token <HF_TOKEN>   # 토큰은 저장소
 hf auth whoami
 
 export HF_USER="k-chan-l"
-export TASK_NAME="<dataset>"          # 라운드별 데이터셋 이름 (히스토리상 pick_and_place2 / pick_and_place3 사용)
+export TASK_NAME="pick_and_place3"     # 라운드별 데이터셋 이름
 export TASK_DESCRIPTION="Pick up the blue cube and place it in the paper cup."
 ```
 
@@ -49,20 +51,39 @@ lerobot-record \
 
 ## train — 학습
 
-> 최초 학습을 시작한 `lerobot-train` 명령은 셸 히스토리에 남아 있지 않습니다 (히스토리에는 아래 resume 명령만 존재). 아래는 위 record 설정과 체크포인트 경로에 맞춰 **재구성한 템플릿**이며, 실제 실행 시 사용한 하이퍼파라미터로 갱신해야 합니다.
+셸 히스토리에는 재개(resume) 명령만 남아 있지만, HF의 `train_config.json`에서 실제 학습 설정을 복원했습니다. 공통 정책 설정은 두 라운드가 같고 **batch_size / save_freq만 다릅니다**.
+
+| 항목 | 1차 (`pick_and_place2`) | 2차 (`pick_and_place`) |
+| --- | --- | --- |
+| batch_size | 8 | 16 |
+| num_workers | 4 | 8 |
+| save_freq | 10,000 | 5,000 |
+| steps | 100,000 | 100,000 |
+| output_dir | `outputs/train/act_so101/pick_and_place2` | `outputs/train/act_so101/pick_and_place_b16` |
+| wandb | 사용 | 미사용 |
+
+공통: ACT / `vision_backbone=resnet18` / `dim_model=512` / `chunk_size=100` / `n_action_steps=100` / `n_encoder_layers=4` / `n_decoder_layers=1` / `use_vae=true` / lr 1e-5 (백본 포함) / weight_decay 1e-4 / seed 1000 / `device=cuda`
+
+2차 학습 명령:
 
 ```bash
 lerobot-train \
-  --dataset.repo_id=${HF_USER}/${TASK_NAME} \
+  --dataset.repo_id=k-chan-l/pick_and_place \
   --policy.type=act \
   --policy.device=cuda \
-  --output_dir=outputs/train/act_so101/${TASK_NAME} \
-  --job_name=act_so101_${TASK_NAME} \
   --policy.push_to_hub=true \
-  --policy.repo_id=${HF_USER}/${TASK_NAME}_act \
-  --save_freq=10_000 \
-  --wandb.enable=true
+  --policy.repo_id=k-chan-l/pick_and_place_act \
+  --output_dir=outputs/train/act_so101/pick_and_place_b16 \
+  --job_name=pick_and_place \
+  --batch_size=16 \
+  --num_workers=8 \
+  --steps=100_000 \
+  --save_freq=5_000 \
+  --log_freq=200 \
+  --seed=1000
 ```
+
+1차는 위에서 `--dataset.repo_id`/`--policy.repo_id`/`--output_dir`/`--job_name`을 `pick_and_place2` 계열로 바꾸고 `--batch_size=8 --num_workers=4 --save_freq=10_000 --wandb.enable=true` 로 실행한 것과 같습니다.
 
 학습 환경 준비:
 
@@ -79,7 +100,7 @@ wandb login
 
 ## resume — 이어서 학습
 
-`--config_path`로 체크포인트의 `train_config.json`을 지정하고 `--resume=true`를 붙입니다. 4차에서 3차 체크포인트에 복구 시연을 얹어 이어서 학습할 때도 이 형태를 사용합니다.
+`--config_path`로 체크포인트의 `train_config.json`을 지정하고 `--resume=true`를 붙입니다. 두 정책 모두 최종 config에 `resume: true`가 남아 있어, 실제로 중단·재개를 거쳐 100k 스텝을 채웠습니다. 4차에서 3차 체크포인트에 복구 시연을 얹어 이어서 학습할 때도 이 형태를 사용합니다.
 
 마지막 체크포인트에서 재개:
 
@@ -120,6 +141,10 @@ lerobot-rollout \
   --duration=0 \
   --display_data=true
 ```
+
+라운드별 `--policy.path`: 1차 `k-chan-l/pick_and_place2_act`, 2차 `k-chan-l/pick_and_place_act`, 3차는 학습 완료 후 기입.
+
+> 롤아웃의 카메라 설정에는 `fourcc: MJPG`가 빠져 있습니다. 학습 데이터는 MJPEG 스트림으로 수집했으므로, 평가 시에도 동일하게 맞추는 편이 관측 분포 일치 측면에서 안전합니다 — 3차 평가부터 추가 권장.
 
 ---
 
