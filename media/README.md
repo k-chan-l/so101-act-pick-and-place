@@ -38,4 +38,4 @@ ffmpeg -i input.mp4 -vf "fps=10,scale=480:-1:flags=lanczos" -t 4 output.gif
 | 2 | **라운드별 성공률 + 실패 유형 누적 막대** | [experiments.md](../docs/experiments.md) 요약표 수치 | `README.md` 결과 |
 | 3 | **태스크 소개 GIF** — `cam_top`+`cam_wrist` 2~3초 | 휴대폰 영상 또는 데이터셋 `videos/` | `README.md` 최상단 |
 
-1번이 이 프로젝트의 핵심 발견(분리비 1.36)을 표보다 잘 보여줍니다.
+1번이 이 프로젝트의 핵심 발견(7지점이 겹친다는것)을 표보다 잘 보여줍니다.
