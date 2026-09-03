@@ -7,6 +7,18 @@ conda activate lerobot     # pandas·safetensors 필요
 DS=~/.cache/huggingface/lerobot/k-chan-l/pick_and_place5_20260901_154211
 ```
 
+### 어디에 무엇이 있나
+
+데이터셋은 `~/.cache/huggingface/lerobot/<user>/<name>/`, 정책은 `~/.cache/huggingface/hub/models--<user>--<name>/` 에 있습니다.
+
+| 파일 | 내용 |
+| --- | --- |
+| `meta/info.json` | 에피소드 수, 프레임 수, feature 목록 |
+| `meta/stats.json` | 이미지 RGB 평균·표준편차, `observation.state` 통계. **데이터셋 간 분포 차이를 여기서 잡습니다** |
+| `data/**/*.parquet` | 프레임 단위 데이터. 관절값·`intervention` 비율 등 |
+| `policy_preprocessor_step_3_normalizer_processor.safetensors` | 정규화 통계. `count`로 어느 데이터셋에서 계산됐는지 확인 |
+| `videos/` | 에피소드별 `cam_top`·`cam_wrist` 영상 |
+
 ---
 
 ## 1. 4차 회귀 — 교정 데이터의 상태 분포 (Round 4)

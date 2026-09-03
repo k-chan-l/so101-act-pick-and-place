@@ -272,3 +272,18 @@ lerobot-teleoperate \
 ```
 
 5차부터는 촬영 전에 카메라 자동 노출·화이트밸런스를 끕니다 → [setup.md](setup.md)
+
+---
+
+## LeRobot 관련 확인된 사실
+
+로컬 `~/lerobot` 소스에서 직접 확인한 것들입니다. 이 실험에서 실제로 문제가 됐던 항목만 남깁니다.
+
+- **`n_action_steps`** — 이 값만큼의 액션을 한 번에 실행한 뒤에야 다시 관측합니다. 기본 100은 30fps에서 **3.33초 open-loop**입니다 (`policies/act/configuration_act.py`). 이 값을 줄이면 나아질 것이라는 가설은 [실험 A/B](docs/rounds/experiment-ab.md)에서 반증됐습니다.
+- **`temporal_ensemble_coeff`** 를 쓸 때는 `n_action_steps=1` 이어야 합니다. 아니면 에러입니다.
+- **DAgger의 `intervention` 플래그는 데이터셋 컬럼으로 기록만 됩니다.** `lerobot-train`도 ACT도 이 컬럼을 읽지 않습니다. 따라서 `--strategy.record_autonomous=true`로 모은 데이터를 그냥 학습하면 **정책이 자기 실패 행동까지 따라 배웁니다.** corrections-only(기본값 `false`)를 쓰세요.
+- **`--strategy.num_episodes`는 corrections-only 모드에서만 정지 조건**입니다. `record_autonomous=true`면 영상 파일 크기 기준으로 에피소드가 회전하며 ESC까지 계속 돕니다.
+- **`--dataset.repo_id`는 문자열 하나**입니다 (`configs/default.py`). 바로 위 주석에 "리스트로 줄 수 있다"고 되어 있으나 타입이 맞지 않습니다 — 여러 데이터셋을 쓰려면 **미리 병합**해야 합니다.
+- 서로 다른 데이터셋을 병합할 때는 **스키마를 맞춰야** 합니다. DAgger 데이터의 `intervention` 컬럼을 제거한 사본이 필요합니다 (4차에서 실제로 필요했던 작업).
+- **`--policy.push_to_hub=false`로 학습하면 체크포인트가 학습 머신에만 남습니다.** 롤아웃은 로봇이 물린 제어 PC에서 해야 하므로 따로 옮겨야 합니다. 3차에서 이 단계를 빠뜨려 수동 push가 필요했습니다.
+

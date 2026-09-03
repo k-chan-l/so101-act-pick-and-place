@@ -99,7 +99,7 @@ lerobot-rollout --strategy.type=base --policy.path=${HF_USER}/${TASK_NAME}_act \
 | [docs/findings.md](docs/findings.md) | 무엇을 배웠는가 + Future Work |
 | [docs/dataset-analysis.md](docs/dataset-analysis.md) | 데이터셋 사후 분석. 로봇 없이 재현 가능 |
 | [docs/protocol.md](docs/protocol.md) | 평가 프로토콜, 실패 유형 정의 |
-| [commands.md](commands.md) | 실행한 LeRobot 명령어 전체 |
+| [commands.md](commands.md) | 실행한 LeRobot 명령어 전체 + LeRobot 관련 확인된 사실 |
 | [setup.md](setup.md) | udev, 카메라 MJPEG·USB 대역폭 해결, 설치 |
 
 ## Hugging Face
